@@ -13,6 +13,8 @@
 #   ZRAM_SWAP              true/false
 #   IPTV_PACKAGES          true/false
 #   MTKHQOS                true/false
+#   ADDITIONAL_PACKAGES    none/helloworld/passwall/passwall2/all-sbwml
+#                          (defaults to none; selects a config fragment)
 #
 # LAN_IP must be an RFC 1918 private address (10.0.0.0/8, 172.16.0.0/12 or
 # 192.168.0.0/16) with a /N prefix; the netmask in config_generate is derived
@@ -173,3 +175,37 @@ grep -qF "netm=\${netmask:-\"$NETMASK\"}" "$CONFIG_GENERATE" || {
 echo "LAN IP 已设置为 $LAN_ADDR/$PREFIX（掩码 $NETMASK）："
 grep -nF "$LAN_ADDR" "$CONFIG_GENERATE" || true
 grep -nF "netm=\${netmask:-\"$NETMASK\"}" "$CONFIG_GENERATE" || true
+
+# Additional packages: append the matching config fragment to CONFIG_FILE.
+# The fragment is moved to ImmortalWrt/.config by the workflow's download step.
+ADDITIONAL_CONFIG=""
+case "${ADDITIONAL_PACKAGES:-none}" in
+  none|"")
+    ;;
+  helloworld)
+    ADDITIONAL_CONFIG="configs/helloworld.config"
+    ;;
+  passwall)
+    ADDITIONAL_CONFIG="configs/passwall.config"
+    ;;
+  passwall2)
+    ADDITIONAL_CONFIG="configs/passwall2.config"
+    ;;
+  all-sbwml)
+    ADDITIONAL_CONFIG="configs/all-sbwml.config"
+    ;;
+  *)
+    echo "错误：未知的 Additional packages 选项：$ADDITIONAL_PACKAGES" >&2
+    exit 1
+    ;;
+esac
+
+if [ -n "$ADDITIONAL_CONFIG" ]; then
+  [ -f "$ADDITIONAL_CONFIG" ] || {
+    echo "错误：找不到配置文件 $ADDITIONAL_CONFIG" >&2
+    exit 1
+  }
+  echo >> "$CONFIG_FILE"
+  echo "追加 $ADDITIONAL_CONFIG 到 $CONFIG_FILE"
+  cat "$ADDITIONAL_CONFIG" >> "$CONFIG_FILE"
+fi

@@ -20,6 +20,16 @@ on:
           - hanwckf
           - Yuzhii0718
         type: choice
+      ADDITIONAL_PACKAGES:
+        description: 'Additional packages'
+        default: 'none'
+        options:
+          - 'none'
+          - 'helloworld'
+          - 'passwall'
+          - 'passwall2'
+          - 'all-sbwml'
+        type: choice
       LanIP:
         description: 'LAN IP Address (CIDR, e.g. 192.168.6.1/24; invalid input falls back to this default)'
         default: '192.168.6.1/24'
@@ -175,6 +185,7 @@ jobs:
         ZRAM_SWAP: ${{ github.event.inputs.ZRAM_SWAP }}
         IPTV_PACKAGES: ${{ github.event.inputs.IPTV_PACKAGES }}
         MTKHQOS: ${{ github.event.inputs.MTKHQOS }}
+        ADDITIONAL_PACKAGES: ${{ github.event.inputs.ADDITIONAL_PACKAGES }}
       run: |
         chmod +x "$GITHUB_WORKSPACE/$CONFIGURE_SH"
         "$GITHUB_WORKSPACE/$CONFIGURE_SH"
@@ -255,6 +266,7 @@ jobs:
         - 源码分支: [$REPO_BRANCH]($REPO_URL/tree/$REPO_BRANCH)
         - 源码 Commit: [$SOURCE_COMMIT]($SOURCE_LINK)
         - 配置文件: $CONFIG_FILE
+        - Additional packages: ${{ github.event.inputs.ADDITIONAL_PACKAGES }}
         - 内核版本: $KERNEL_VERSION
         - 管理地址: ${{ github.event.inputs.LanIP }}
         - 编译缓存: ${{ github.event.inputs.Cache }}
