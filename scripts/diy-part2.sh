@@ -27,39 +27,6 @@ remove_feed_duplicates() {
   find package/feeds -xtype l -delete 2>/dev/null || true
 }
 
-# Replace Smartdns
-git clone --depth=1 -b PikuZheng https://github.com/Ljzkirito/smartdns-openwrt package/smartdns-custom
-remove_feed_duplicates package/smartdns-custom
-
-# Replace luci-theme-argon
-rm -rfv feeds/luci/themes/luci-theme-argon
-git clone https://github.com/jerrykuku/luci-theme-argon.git feeds/luci/themes/luci-theme-argon
-git -C feeds/luci/themes/luci-theme-argon checkout 1991a8e29ef6a086fb566517675edc85b1be629a
-
-# Update golang latest version
-rm -rfv feeds/packages/lang/golang
-git clone --depth=1 https://github.com/sbwml/packages_lang_golang feeds/packages/lang/golang
-
-# Update rust latest version
-rm -rf feeds/packages/lang/rust
-git clone https://github.com/sbwml/packages_lang_rust feeds/packages/lang/rust
-
-# ---------------------------------------------------------------------------
-# Additional packages (workflow input ADDITIONAL_PACKAGES)
-# ---------------------------------------------------------------------------
-# Each selected repository is cloned into its own folder under package/ (the
-# build scans package/ recursively). Any package folder installed from feeds
-# with the same name is removed, so the local copy is the only one.
-ADDITIONAL_PACKAGES="${ADDITIONAL_PACKAGES:-none}"
-
-clone_passwall_packages() {
-  git clone --depth=1 https://github.com/Openwrt-Passwall/openwrt-passwall-packages package/passwall-packages
-  # This build already provides its own SmartDNS package; do not let the
-  # passwall dependency tree introduce a second package with the same name.
-  rm -rfv package/passwall-packages/smartdns
-  remove_feed_duplicates package/passwall-packages
-}
-
 # ---------------------------------------------------------------------------
 # Remove every upx invocation from the package Makefiles
 # ---------------------------------------------------------------------------
@@ -93,6 +60,30 @@ remove_upx_calls() {
   echo "已清理 $count 个 Makefile 中的 upx 命令"
 }
 
+# Replace Smartdns
+git clone --depth=1 -b PikuZheng https://github.com/Ljzkirito/smartdns-openwrt package/smartdns-custom
+remove_feed_duplicates package/smartdns-custom
+
+# Replace luci-theme-argon
+rm -rfv feeds/luci/themes/luci-theme-argon
+git clone https://github.com/jerrykuku/luci-theme-argon.git feeds/luci/themes/luci-theme-argon
+git -C feeds/luci/themes/luci-theme-argon checkout 1991a8e29ef6a086fb566517675edc85b1be629a
+
+# Update golang latest version
+rm -rfv feeds/packages/lang/golang
+git clone --depth=1 https://github.com/sbwml/packages_lang_golang feeds/packages/lang/golang
+
+# Update rust latest version
+rm -rf feeds/packages/lang/rust
+git clone https://github.com/sbwml/packages_lang_rust feeds/packages/lang/rust
+
+# ---------------------------------------------------------------------------
+# Additional packages (workflow input ADDITIONAL_PACKAGES)
+# ---------------------------------------------------------------------------
+# Each selected repository is cloned into its own folder under package/ (the
+# build scans package/ recursively). Any package folder installed from feeds
+# with the same name is removed, so the local copy is the only one.
+ADDITIONAL_PACKAGES="${ADDITIONAL_PACKAGES:-none}"
 ADDITIONAL_CONFIG=""
 case "$ADDITIONAL_PACKAGES" in
   none)
@@ -123,15 +114,19 @@ case "$ADDITIONAL_PACKAGES" in
     ;;
   passwall)
     ADDITIONAL_CONFIG="configs/passwall.config"
-    git clone --depth=1 https://github.com/Openwrt-Passwall/openwrt-passwall package/openwrt-passwall
-    remove_feed_duplicates package/openwrt-passwall
-    clone_passwall_packages
+    git clone --depth=1 https://github.com/Openwrt-Passwall/openwrt-passwall package/luci-passwall
+    git clone --depth=1 https://github.com/Openwrt-Passwall/openwrt-passwall-packages package/passwall-packages
+    rm -rf package/passwall-packages/smartdns
+    rm -rf feeds/luci/applications/luci-app-passwall
+    remove_feed_duplicates package/passwall-packages
     ;;
   passwall2)
     ADDITIONAL_CONFIG="configs/passwall2.config"
-    git clone --depth=1 https://github.com/Openwrt-Passwall/openwrt-passwall2 package/openwrt-passwall2
-    remove_feed_duplicates package/openwrt-passwall2
-    clone_passwall_packages
+    git clone --depth=1 https://github.com/Openwrt-Passwall/openwrt-passwall2 package/luci-passwall2
+    git clone --depth=1 https://github.com/Openwrt-Passwall/openwrt-passwall-packages package/passwall-packages
+    rm -rf package/passwall-packages/smartdns
+    rm -rf feeds/luci/applications/luci-app-passwall
+    remove_feed_duplicates package/passwall-packages
     ;;
   all-sbwml)
     ADDITIONAL_CONFIG="configs/all-sbwml.config"
