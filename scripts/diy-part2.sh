@@ -21,7 +21,7 @@ remove_feed_duplicates() {
     pkgname=$(basename "$pkgdir")
     [ -n "$pkgname" ] || continue
     find feeds -type d -name "$pkgname" -prune \
-      -exec sh -c '[ -f "$1/Makefile" ] && rm -rfv "$1"' _ {} \; 2>/dev/null || true
+      -exec sh -c '[ -f "$1/Makefile" ] && rm -rf "$1" && echo "removed $1"' _ {} \; 2>/dev/null || true
   done
   # Drop the symlinks that "feeds install -a" left pointing at the removed dirs.
   find package/feeds -xtype l -delete 2>/dev/null || true
@@ -65,12 +65,12 @@ git clone --depth=1 -b PikuZheng https://github.com/Ljzkirito/smartdns-openwrt p
 remove_feed_duplicates package/smartdns-custom
 
 # Replace luci-theme-argon
-rm -rfv feeds/luci/themes/luci-theme-argon
+rm -rf feeds/luci/themes/luci-theme-argon && echo "removed feeds/luci/themes/luci-theme-argon"
 git clone https://github.com/jerrykuku/luci-theme-argon.git feeds/luci/themes/luci-theme-argon
 git -C feeds/luci/themes/luci-theme-argon checkout 1991a8e29ef6a086fb566517675edc85b1be629a
 
 # Update golang latest version
-rm -rfv feeds/packages/lang/golang
+rm -rf feeds/packages/lang/golang && echo "removed feeds/packages/lang/golang"
 git clone --depth=1 https://github.com/sbwml/packages_lang_golang feeds/packages/lang/golang
 
 # Update rust latest version
@@ -93,7 +93,7 @@ case "$ADDITIONAL_PACKAGES" in
     ADDITIONAL_CONFIG="configs/helloworld.config"
     git clone --depth=1 -b dev https://github.com/fw876/helloworld package/helloworld
 	# package/helloworld/shadowsocks-libev has a dependency on 'firewall4'
-	rm -rfv package/helloworld/shadowsocks-libev
+	rm -rf package/helloworld/shadowsocks-libev && echo "removed package/helloworld/shadowsocks-libev"
 	# 要替换的包，按需增删这一行即可
 	replace=(v2ray-geodata kcptun shadowsocks-rust shadow-tls tuic-client naiveproxy)
 	sbwml_dir=$(mktemp -d)
@@ -101,11 +101,11 @@ case "$ADDITIONAL_PACKAGES" in
 	# 源里有就替换，没有就跳过，不报错
 	for p in "${replace[@]}"; do
 	  if [ -d "$sbwml_dir/$p" ]; then
-		echo "替换 $p"
-		rm -rfv "package/helloworld/$p"
+		echo "Replace $p ,removed package/helloworld/$p"
+		rm -rf "package/helloworld/$p"
 		cp -a "$sbwml_dir/$p" package/helloworld/
 	  else
-		echo "跳过 $p（sbwml 源中不存在）"
+		echo "Skip $p（sbwml 源中不存在）"
 	  fi
 	done
 	rm -rf "$sbwml_dir"
@@ -134,12 +134,12 @@ case "$ADDITIONAL_PACKAGES" in
     mosdns_dir=$(mktemp -d)
 	git clone --depth=1 https://github.com/fw876/helloworld "$mosdns_dir"
 	if [ -d "$mosdns_dir/mosdns" ]; then
-	  rm -rfv package/helloworld/mosdns
+	  rm -rf package/helloworld/mosdns && echo "removed package/helloworld/mosdns"
 	  cp -a "$mosdns_dir/mosdns" package/helloworld/
 	else
 	  echo "跳过 mosdns（fw876/helloworld 中不存在）"
 	fi
-    rm -rfv package/helloworld/smartdns
+    rm -rf package/helloworld/smartdns && echo "removed package/helloworld/smartdns"
     rm -rf "$mosdns_dir"
     remove_feed_duplicates package/helloworld
     ;;
