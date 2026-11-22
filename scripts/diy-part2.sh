@@ -61,71 +61,6 @@ clone_passwall_packages() {
 }
 
 # ---------------------------------------------------------------------------
-# Replace / fill in individual packages from sbwml/openwrt_helloworld
-# ---------------------------------------------------------------------------
-# Usage: fix_depends_packages {dir1,dir2}   (brace expansion, or space-separated)
-#   Every name must be a directory of sbwml/openwrt_helloworld, e.g.
-#   v2ray-geodata (which provides v2ray-geoip/v2ray-geosite) and
-#   shadowsocks-rust. The repo is cloned once into package/depends-packages;
-#   afterwards every directory that was not requested is deleted, so the clone
-#   can never shadow the packages the main repo already ships. Same-named
-#   directories in other local clones and in feeds are removed too, i.e. the
-#   sbwml copy replaces them.
-fix_depends_packages() {
-  local dest="package/depends-packages"
-  local -a keep=() missing=()
-  local want dir name other
-
-  rm -rf "$dest"
-  git clone --depth=1 https://github.com/sbwml/openwrt_helloworld "$dest" || {
-    echo "错误：无法克隆 sbwml/openwrt_helloworld" >&2
-    return 1
-  }
-
-  for want in "$@"; do
-    if [ -d "$dest/$want" ]; then
-      keep+=("$want")
-      echo "保留 $want"
-    else
-      missing+=("$want")
-    fi
-  done
-
-  if [ ${#missing[@]} -gt 0 ]; then
-    echo "错误：sbwml/openwrt_helloworld 中没有这些包目录：${missing[*]}" >&2
-    return 1
-  fi
-
-  # Delete every directory that is not one of the resolved packages (including
-  # hidden ones such as .git, so the tree only contains what we asked for).
-  for dir in "$dest"/*/ "$dest"/.[!.]*/; do
-    [ -d "$dir" ] || continue
-    name=$(basename "$dir")
-    case " ${keep[*]} " in
-      *" $name "*) ;;
-      *)
-        echo "删除未选中的包目录：$dir"
-        rm -rf "$dir"
-        ;;
-    esac
-  done
-
-  # The sbwml copy replaces same-named packages of other local clones and feeds.
-  for want in "${keep[@]}"; do
-    for other in package/*/; do
-      [ "${other%/}" = "$dest" ] && continue
-      if [ -d "$other$want" ]; then
-        echo "删除同名目录：$other$want"
-        rm -rf "$other$want"
-      fi
-    done
-  done
-  remove_feed_duplicates "$dest"
-
-  echo "从 sbwml/openwrt_helloworld 引入：${keep[*]}"
-}
-
-# ---------------------------------------------------------------------------
 # Remove every upx invocation from the package Makefiles
 # ---------------------------------------------------------------------------
 # Several packages compress their binaries with upx at build time (xray-core
@@ -166,11 +101,25 @@ case "$ADDITIONAL_PACKAGES" in
   helloworld)
     ADDITIONAL_CONFIG="configs/helloworld.config"
     git clone --depth=1 -b dev https://github.com/fw876/helloworld package/helloworld
-    # package/helloworld/shadowsocks-libev has a dependency on 'firewall4'
-    rm -rfv package/helloworld/shadowsocks-libev
-    # 21.02 没有 rust 工具链:用 sbwml 的预编译 shadowsocks-rust 替换 helloworld 的源码版
-    fix_depends_packages v2ray-geodata kcptun shadowsocks-rust shadow-tls tuic-client naiveproxy
-    remove_feed_duplicates package/helloworld
+	# package/helloworld/shadowsocks-libev has a dependency on 'firewall4'
+	rm -rfv package/helloworld/shadowsocks-libev
+	# 要替换的包，按需增删这一行即可
+	replace=(v2ray-geodata kcptun shadowsocks-rust shadow-tls tuic-client naiveproxy)
+	sbwml_dir=$(mktemp -d)
+	git clone --depth=1 https://github.com/sbwml/openwrt_helloworld "$sbwml_dir"
+	# 源里有就替换，没有就跳过，不报错
+	for p in "${replace[@]}"; do
+	  if [ -d "$sbwml_dir/$p" ]; then
+		echo "替换 $p"
+		rm -rfv "package/helloworld/$p"
+		cp -a "$sbwml_dir/$p" package/helloworld/
+	  else
+		echo "跳过 $p（sbwml 源中不存在）"
+	  fi
+	done
+	rm -rf "$sbwml_dir"
+	echo "处理完成：${replace[*]}"
+	remove_feed_duplicates package/helloworld
     ;;
   passwall)
     ADDITIONAL_CONFIG="configs/passwall.config"
@@ -187,11 +136,16 @@ case "$ADDITIONAL_PACKAGES" in
   all-sbwml)
     ADDITIONAL_CONFIG="configs/all-sbwml.config"
     git clone --depth=1 https://github.com/sbwml/openwrt_helloworld package/helloworld
-    git clone --depth=1 https://github.com/sbwml/luci-app-mosdns -b openwrt-21.02 package/tmp
-    rm -rfv package/helloworld/mosdns
-    cp -r package/tmp/mosdns package/helloworld/mosdns
-    rm -rfv package/tmp
-    rm -rf package/helloworld/smartdns
+    mosdns_dir=$(mktemp -d)
+	git clone --depth=1 https://github.com/fw876/helloworld "$mosdns_dir"
+	if [ -d "$mosdns_dir/mosdns" ]; then
+	  rm -rfv package/helloworld/mosdns
+	  cp -a "$mosdns_dir/mosdns" package/helloworld/
+	else
+	  echo "跳过 mosdns（fw876/helloworld 中不存在）"
+	fi
+    rm -rfv package/helloworld/smartdns
+    rm -rf "$mosdns_dir"
     remove_feed_duplicates package/helloworld
     ;;
   *)
