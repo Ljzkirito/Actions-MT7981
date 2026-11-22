@@ -116,16 +116,16 @@ case "$ADDITIONAL_PACKAGES" in
     ADDITIONAL_CONFIG="configs/passwall.config"
     git clone --depth=1 https://github.com/Openwrt-Passwall/openwrt-passwall package/luci-passwall
     git clone --depth=1 https://github.com/Openwrt-Passwall/openwrt-passwall-packages package/passwall-packages
-    rm -rf package/passwall-packages/smartdns
-    rm -rf feeds/luci/applications/luci-app-passwall
+    rm -rf package/passwall-packages/smartdns && echo "Removed passwall-packages/smartdns"
+    rm -rf feeds/luci/applications/luci-app-passwall feeds/luci/applications/luci-app-passwall2
     remove_feed_duplicates package/passwall-packages
     ;;
   passwall2)
     ADDITIONAL_CONFIG="configs/passwall2.config"
     git clone --depth=1 https://github.com/Openwrt-Passwall/openwrt-passwall2 package/luci-passwall2
     git clone --depth=1 https://github.com/Openwrt-Passwall/openwrt-passwall-packages package/passwall-packages
-    rm -rf package/passwall-packages/smartdns
-    rm -rf feeds/luci/applications/luci-app-passwall
+    rm -rf package/passwall-packages/smartdns && echo "Removed passwall-packages/smartdns"
+    rm -rf feeds/luci/applications/luci-app-passwall feeds/luci/applications/luci-app-passwall2
     remove_feed_duplicates package/passwall-packages
     ;;
   all-sbwml)
