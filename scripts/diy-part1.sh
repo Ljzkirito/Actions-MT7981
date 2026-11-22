@@ -15,9 +15,8 @@
 #sed -i 's/mini_ttl\t3600/mini_ttl\t0/g' package/network/services/dnsmasq/files/dhcp.conf
 
 # 默认包：用 odhcp6c + odhcpd-ipv6only 取代 ipv6helper
-[ -f include/target.mk ] && \
-  sed -i -E 's/^([[:space:]]*)ipv6helper(.*)$/\1odhcp6c odhcpd-ipv6only\2/' include/target.mk || \
-  echo "警告：未能替换 include/target.mk 中的 ipv6helper，继续构建" >&2
+sed -i -E 's/^([[:space:]]*)ipv6helper(.*)$/\1odhcp6c odhcpd-ipv6only\2/' include/target.mk || \
+echo "警告：未能替换 include/target.mk 中的 ipv6helper，继续构建" >&2
 
 # 关闭 LAN 的 DHCPv6（保持 RA 为 server，仅用 SLAAC）；ipv6helper 已不在
 # 默认包中，60-ipv6-hybrid 不会再把它覆盖回 hybrid。删除 ra_flags 的
