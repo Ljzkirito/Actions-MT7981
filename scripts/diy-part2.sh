@@ -87,7 +87,8 @@ ADDITIONAL_PACKAGES="${ADDITIONAL_PACKAGES:-none}"
 ADDITIONAL_CONFIG=""
 case "$ADDITIONAL_PACKAGES" in
   none)
-    echo "Additional packages: none, skipping"
+    sed -i "/CONFIG_PACKAGE_kmod-tun/d" "$CONFIG_FILE"
+    echo "Additional packages: none, removed kmod-tun in $CONFIG_FILE"
     ;;
   helloworld)
     ADDITIONAL_CONFIG="configs/helloworld.config"

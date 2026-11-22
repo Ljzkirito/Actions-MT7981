@@ -40,7 +40,6 @@ cd "${GITHUB_WORKSPACE:-$(pwd)}"
 
 # Remove stale entries for every option governed below, then append fresh ones
 for cfg in \
-  CONFIG_PACKAGE_kmod-tun \
   CONFIG_PACKAGE_kmod-warp \
   CONFIG_MTK_MEMORY_SHRINK_AGGRESS \
   CONFIG_PACKAGE_kmod-zram \
