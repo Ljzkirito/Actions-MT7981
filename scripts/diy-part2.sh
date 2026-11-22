@@ -170,7 +170,7 @@ case "$ADDITIONAL_PACKAGES" in
     # 的源码版（否则 shadowsocks-rust 的 Makefile 会因为找不到 rust-package.mk
     # 而在解析阶段失败）；v2ray-geodata 提供 v2ray-geoip / v2ray-geosite。
     # 花括号是 shell 展开，等价于 fix_depends_packages v2ray-geodata shadowsocks-rust
-    fix_depends_packages v2ray-geodata shadowsocks-rust
+    fix_depends_packages v2ray-geodata shadowsocks-rust shadow-tls
     remove_feed_duplicates package/helloworld
     ;;
   passwall)
