@@ -36,15 +36,13 @@ rm -rfv feeds/luci/themes/luci-theme-argon
 git clone https://github.com/jerrykuku/luci-theme-argon.git feeds/luci/themes/luci-theme-argon
 git -C feeds/luci/themes/luci-theme-argon checkout 1991a8e29ef6a086fb566517675edc85b1be629a
 
-#https://github.com/immortalwrt/packages/issues/1607
-#Fix Rust compilation failure（21.02 no rust)
-if [ -f feeds/packages/lang/rust/Makefile ]; then
-  sed -i 's/--set=llvm\.download-ci-llvm=true/--set=llvm.download-ci-llvm=false/' feeds/packages/lang/rust/Makefile
-fi
-
 # Update golang latest version
 rm -rfv feeds/packages/lang/golang
 git clone --depth=1 https://github.com/sbwml/packages_lang_golang feeds/packages/lang/golang
+
+# Update rust latest version
+rm -rf feeds/packages/lang/rust
+git clone https://github.com/sbwml/packages_lang_rust feeds/packages/lang/rust
 
 # ---------------------------------------------------------------------------
 # Additional packages (workflow input ADDITIONAL_PACKAGES)
