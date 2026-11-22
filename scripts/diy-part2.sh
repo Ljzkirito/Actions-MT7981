@@ -125,6 +125,39 @@ fix_depends_packages() {
   echo "从 sbwml/openwrt_helloworld 引入：${keep[*]}"
 }
 
+# ---------------------------------------------------------------------------
+# Remove every upx invocation from the package Makefiles
+# ---------------------------------------------------------------------------
+# Several packages compress their binaries with upx at build time (xray-core
+# and mihomo in helloworld, for example). The compressed binaries are bigger
+# pain than they are worth: upx builds a host tool first, some of its outputs
+# fail on certain kernels/filesystems, and the runtime decompression hides the
+# real binary size. This deletes the upx command lines from every Makefile in
+# package/ and feeds/ while leaving the upx package itself untouched, so the
+# uncompressed binary that was already copied next to it is installed instead.
+remove_upx_calls() {
+  local root file count=0
+  # "$(STAGING_DIR_HOST)/bin/upx ..." and a bare "upx -..." invocation.
+  local pat='STAGING_DIR[^[:space:]]*/bin/upx|(^|[[:space:];:()])upx[[:space:]]+-'
+
+  for root in package feeds; do
+    [ -d "$root" ] || continue
+    while IFS= read -r file; do
+      # Never touch the upx package that provides the host tool itself.
+      case "$file" in
+        */upx/Makefile|*/upx-*/Makefile|*/upx_*/Makefile) continue ;;
+      esac
+      grep -qE "$pat" "$file" || continue
+      # Drop the upx command line and the "upx/host" build dependency.
+      sed -i -E -e "\#$pat#d" \
+               -e '/^[[:space:]]*PKG_BUILD_DEPENDS/ s#[[:space:]]+upx/host##g' "$file"
+      echo "移除 upx 命令：$file"
+      count=$((count + 1))
+    done < <(find "$root" -type f -name Makefile)
+  done
+  echo "已清理 $count 个 Makefile 中的 upx 命令"
+}
+
 ADDITIONAL_CONFIG=""
 case "$ADDITIONAL_PACKAGES" in
   none)
@@ -163,6 +196,9 @@ case "$ADDITIONAL_PACKAGES" in
     echo "警告：未知的 Additional packages 选项 '$ADDITIONAL_PACKAGES'，跳过" >&2
     ;;
 esac
+
+# Strip upx from every package Makefile (cloned repositories and feeds).
+remove_upx_calls
 
 # Append the matching config fragment to CONFIG_FILE. The workflow later moves
 # CONFIG_FILE to ImmortalWrt/.config, so this runs while the repo root is still
