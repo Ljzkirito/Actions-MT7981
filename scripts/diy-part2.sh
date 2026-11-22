@@ -166,11 +166,13 @@ case "$ADDITIONAL_PACKAGES" in
   helloworld)
     ADDITIONAL_CONFIG="configs/helloworld.config"
     git clone --depth=1 -b dev https://github.com/fw876/helloworld package/helloworld
+    # package/helloworld/shadowsocks-libev has a dependency on 'firewall4'
+    rm -rfv package/helloworld/shadowsocks-libev
     # 21.02 没有 rust 工具链：用 sbwml 的预编译 shadowsocks-rust 替换 helloworld
     # 的源码版（否则 shadowsocks-rust 的 Makefile 会因为找不到 rust-package.mk
     # 而在解析阶段失败）；v2ray-geodata 提供 v2ray-geoip / v2ray-geosite。
     # 花括号是 shell 展开，等价于 fix_depends_packages v2ray-geodata shadowsocks-rust
-    fix_depends_packages v2ray-geodata shadowsocks-rust shadow-tls
+    fix_depends_packages v2ray-geodata kcptun shadowsocks-rust shadow-tls tuic-client naiveproxy
     remove_feed_duplicates package/helloworld
     ;;
   passwall)
