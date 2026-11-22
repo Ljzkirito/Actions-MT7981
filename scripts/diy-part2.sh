@@ -68,25 +68,30 @@ clone_passwall_packages() {
   rm -rf package/openwrt-passwall-packages/smartdns
 }
 
+ADDITIONAL_CONFIG=""
 case "$ADDITIONAL_PACKAGES" in
   none|"")
     echo "Additional packages: none, skipping"
     ;;
   helloworld)
+    ADDITIONAL_CONFIG="configs/helloworld.config"
     git clone --depth=1 https://github.com/fw876/helloworld package/helloworld
     remove_feed_duplicates package/helloworld
     ;;
   passwall)
+    ADDITIONAL_CONFIG="configs/passwall.config"
     git clone --depth=1 https://github.com/Openwrt-Passwall/openwrt-passwall package/openwrt-passwall
     remove_feed_duplicates package/openwrt-passwall
     clone_passwall_packages
     ;;
   passwall2)
+    ADDITIONAL_CONFIG="configs/passwall2.config"
     git clone --depth=1 https://github.com/Openwrt-Passwall/openwrt-passwall2 package/openwrt-passwall2
     remove_feed_duplicates package/openwrt-passwall2
     clone_passwall_packages
     ;;
   all-sbwml)
+    ADDITIONAL_CONFIG="configs/all-sbwml.config"
     git clone --depth=1 https://github.com/sbwml/openwrt_helloworld package/helloworld
     remove_feed_duplicates package/helloworld
     # Keep the custom SmartDNS cloned above instead of sbwml's copy.
@@ -96,3 +101,23 @@ case "$ADDITIONAL_PACKAGES" in
     echo "警告：未知的 Additional packages 选项 '$ADDITIONAL_PACKAGES'，跳过" >&2
     ;;
 esac
+
+# Append the matching config fragment to CONFIG_FILE. The workflow later moves
+# CONFIG_FILE to ImmortalWrt/.config, so this runs while the repo root is still
+# reachable through GITHUB_WORKSPACE.
+if [ -n "$ADDITIONAL_CONFIG" ]; then
+  WORKSPACE="${GITHUB_WORKSPACE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+  CONFIG_PATH="$WORKSPACE/$CONFIG_FILE"
+  CONFIG_FRAGMENT="$WORKSPACE/$ADDITIONAL_CONFIG"
+  [ -f "$CONFIG_PATH" ] || {
+    echo "错误：找不到配置文件 $CONFIG_PATH" >&2
+    exit 1
+  }
+  [ -f "$CONFIG_FRAGMENT" ] || {
+    echo "错误：找不到配置文件 $CONFIG_FRAGMENT" >&2
+    exit 1
+  }
+  echo >> "$CONFIG_PATH"
+  echo "追加 $CONFIG_FRAGMENT 到 $CONFIG_PATH"
+  cat "$CONFIG_FRAGMENT" >> "$CONFIG_PATH"
+fi

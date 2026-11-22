@@ -172,6 +172,8 @@ jobs:
       run: cd ImmortalWrt && ./scripts/feeds install -a
 
     - name: Load custom configuration (DIY_P2_SH)
+      env:
+        ADDITIONAL_PACKAGES: ${{ github.event.inputs.ADDITIONAL_PACKAGES }}
       run: |
         [ -e files ] && mv files ImmortalWrt/files
         chmod +x $DIY_P2_SH
@@ -185,7 +187,6 @@ jobs:
         ZRAM_SWAP: ${{ github.event.inputs.ZRAM_SWAP }}
         IPTV_PACKAGES: ${{ github.event.inputs.IPTV_PACKAGES }}
         MTKHQOS: ${{ github.event.inputs.MTKHQOS }}
-        ADDITIONAL_PACKAGES: ${{ github.event.inputs.ADDITIONAL_PACKAGES }}
       run: |
         chmod +x "$GITHUB_WORKSPACE/$CONFIGURE_SH"
         "$GITHUB_WORKSPACE/$CONFIGURE_SH"
