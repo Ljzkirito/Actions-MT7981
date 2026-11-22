@@ -28,11 +28,8 @@ remove_feed_duplicates() {
 }
 
 # Replace Smartdns
-# Clone the custom repo into a dedicated folder under package/ (which the build
-# scans recursively), then delete the same-named package folders installed
-# from feeds so the local copy is the only one.
-git clone --depth=1 -b PikuZheng https://github.com/Ljzkirito/smartdns-openwrt package/smartdns-openwrt
-remove_feed_duplicates package/smartdns-openwrt
+git clone --depth=1 -b PikuZheng https://github.com/Ljzkirito/smartdns-openwrt package/smartdns-custom
+remove_feed_duplicates package/smartdns-custom
 
 # Replace luci-theme-argon
 rm -rfv feeds/luci/themes/luci-theme-argon
@@ -81,18 +78,12 @@ fix_depends_packages() {
   local -a keep=() missing=()
   local want dir name other
 
-  if [ $# -eq 0 ]; then
-    echo "警告：fix_depends_packages 未收到包目录，跳过" >&2
-    return 0
-  fi
-
   rm -rf "$dest"
   git clone --depth=1 https://github.com/sbwml/openwrt_helloworld "$dest" || {
     echo "错误：无法克隆 sbwml/openwrt_helloworld" >&2
     return 1
   }
 
-  # Only directory names are accepted: no package/Makefile lookup.
   for want in "$@"; do
     if [ -d "$dest/$want" ]; then
       keep+=("$want")
@@ -148,7 +139,7 @@ case "$ADDITIONAL_PACKAGES" in
     # 的源码版（否则 shadowsocks-rust 的 Makefile 会因为找不到 rust-package.mk
     # 而在解析阶段失败）；v2ray-geodata 提供 v2ray-geoip / v2ray-geosite。
     # 花括号是 shell 展开，等价于 fix_depends_packages v2ray-geodata shadowsocks-rust
-    fix_depends_packages {v2ray-geodata,shadowsocks-rust}
+    fix_depends_packages v2ray-geodata shadowsocks-rust
     remove_feed_duplicates package/helloworld
     ;;
   passwall)
