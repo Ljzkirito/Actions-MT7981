@@ -85,10 +85,23 @@ git clone https://github.com/sbwml/packages_lang_rust feeds/packages/lang/rust
 # with the same name is removed, so the local copy is the only one.
 ADDITIONAL_PACKAGES="${ADDITIONAL_PACKAGES:-none}"
 ADDITIONAL_CONFIG=""
+
+# This script runs with ImmortalWrt/ as the working directory (the workflow
+# cds there before calling it), but CONFIG_FILE is relative to the
+# Actions-MT7981 repo root. Resolve it once to an absolute path so sed/cat and
+# the existence check below work regardless of the current directory.
+WORKSPACE="${GITHUB_WORKSPACE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+[ -n "${CONFIG_FILE:-}" ] || { echo "错误：未设置 CONFIG_FILE" >&2; exit 1; }
+case "$CONFIG_FILE" in
+  /*) CONFIG_PATH="$CONFIG_FILE" ;;
+  *)  CONFIG_PATH="$WORKSPACE/$CONFIG_FILE" ;;
+esac
+[ -f "$CONFIG_PATH" ] || { echo "错误：找不到配置文件 $CONFIG_PATH" >&2; exit 1; }
+
 case "$ADDITIONAL_PACKAGES" in
   none)
-    sed -i "/CONFIG_PACKAGE_kmod-tun/d" "$CONFIG_FILE"
-    echo "Additional packages: none, removed kmod-tun in $CONFIG_FILE"
+    sed -i "/CONFIG_PACKAGE_kmod-tun/d" "$CONFIG_PATH"
+    echo "Additional packages: none, removed kmod-tun in $CONFIG_PATH"
     ;;
   helloworld)
     ADDITIONAL_CONFIG="configs/helloworld.config"
@@ -152,17 +165,11 @@ esac
 # Strip upx from every package Makefile (cloned repositories and feeds).
 remove_upx_calls
 
-# Append the matching config fragment to CONFIG_FILE. The workflow later moves
-# CONFIG_FILE to ImmortalWrt/.config, so this runs while the repo root is still
-# reachable through GITHUB_WORKSPACE.
+# Append the matching config fragment to CONFIG_PATH (already resolved to an
+# absolute path above). The workflow later moves CONFIG_FILE to
+# ImmortalWrt/.config, so this runs while the repo root is still reachable.
 if [ -n "$ADDITIONAL_CONFIG" ]; then
-  WORKSPACE="${GITHUB_WORKSPACE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
-  CONFIG_PATH="$WORKSPACE/$CONFIG_FILE"
   CONFIG_FRAGMENT="$WORKSPACE/$ADDITIONAL_CONFIG"
-  [ -f "$CONFIG_PATH" ] || {
-    echo "错误：找不到配置文件 $CONFIG_PATH" >&2
-    exit 1
-  }
   [ -f "$CONFIG_FRAGMENT" ] || {
     echo "错误：找不到配置文件 $CONFIG_FRAGMENT" >&2
     exit 1
