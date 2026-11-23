@@ -37,34 +37,31 @@ remove_feed_duplicates() {
 }
 
 # ---------------------------------------------------------------------------
-# Remove every upx invocation from the package Makefiles
+# Remove the upx invocations from the given package directories
 # ---------------------------------------------------------------------------
-# Several packages compress their binaries with upx at build time (xray-core
-# and mihomo in helloworld, for example). The compressed binaries are bigger
-# pain than they are worth: upx builds a host tool first, some of its outputs
-# fail on certain kernels/filesystems, and the runtime decompression hides the
-# real binary size. This deletes the upx command lines from every Makefile in
-# package/ and feeds/ while leaving the upx package itself untouched, so the
+# Some packages compress their binaries with upx at build time (xray-core and
+# mihomo in helloworld, for example). The compressed binaries are bigger pain
+# than they are worth: upx builds a host tool first, some of its outputs fail
+# on certain kernels/filesystems, and the runtime decompression hides the real
+# binary size. Only the directories passed in are rewritten, so the
 # uncompressed binary that was already copied next to it is installed instead.
+# Usage: remove_upx_calls <pkg-dir>...
 remove_upx_calls() {
-  local root file count=0
+  [ "$#" -gt 0 ] || { echo "remove_upx_calls: 用法: remove_upx_calls <pkg-dir>..." >&2; return 1; }
+  local dir file count=0
   # "$(STAGING_DIR_HOST)/bin/upx ..." and a bare "upx -..." invocation.
   local pat='STAGING_DIR[^[:space:]]*/bin/upx|(^|[[:space:];:()])upx[[:space:]]+-'
 
-  for root in package feeds; do
-    [ -d "$root" ] || continue
+  for dir in "$@"; do
+    [ -d "$dir" ] || { echo "跳过 upx 清理（目录不存在）：$dir"; continue; }
     while IFS= read -r file; do
-      # Never touch the upx package that provides the host tool itself.
-      case "$file" in
-        */upx/Makefile|*/upx-*/Makefile|*/upx_*/Makefile) continue ;;
-      esac
       grep -qE "$pat" "$file" || continue
       # Drop the upx command line and the "upx/host" build dependency.
       sed -i -E -e "\#$pat#d" \
                -e '/^[[:space:]]*PKG_BUILD_DEPENDS/ s#[[:space:]]+upx/host##g' "$file"
       echo "移除 upx 命令：$file"
       count=$((count + 1))
-    done < <(find "$root" -type f -name Makefile)
+    done < <(find "$dir" -type f -name Makefile)
   done
   echo "已清理 $count 个 Makefile 中的 upx 命令"
 }
@@ -128,7 +125,7 @@ git clone https://github.com/sbwml/packages_lang_rust feeds/packages/lang/rust
 # build scans package/ recursively). Any package folder installed from feeds
 # with the same name is removed, so the local copy is the only one.
 ADDITIONAL_PACKAGES="${ADDITIONAL_PACKAGES:-none}"
-ADDITIONAL_CONFIG=""
+ADDITIONAL_CONFIGS=()
 
 # This script runs with ImmortalWrt/ as the working directory (the workflow
 # cds there before calling it), but CONFIG_FILE is relative to the
@@ -140,15 +137,16 @@ CONFIG_PATH="$WORKSPACE/$CONFIG_FILE"
 
 case "$ADDITIONAL_PACKAGES" in
   helloworld)
-    ADDITIONAL_CONFIG="configs/helloworld.config"
+    ADDITIONAL_CONFIGS+=(configs/helloworld.config)
     git clone --depth=1 -b dev "$SSRP_REPO" package/helloworld
 	# package/helloworld/shadowsocks-libev has a dependency on 'firewall4'
 	rm -rf package/helloworld/shadowsocks-libev && echo "removed package/helloworld/shadowsocks-libev"
 	replace_from_repo "$SBWML_REPO" package/helloworld v2ray-geodata kcptun shadowsocks-rust shadow-tls tuic-client naiveproxy
+	remove_upx_calls package/helloworld/mihomo package/helloworld/xray-core
 	remove_feed_duplicates package/helloworld
     ;;
   passwall)
-    ADDITIONAL_CONFIG="configs/passwall.config"
+    ADDITIONAL_CONFIGS+=(configs/passwall.config)
     git clone --depth=1 "$PW1_REPO" package/passwall-luci
     git clone --depth=1 "$PWP_REPO" package/passwall-packages
     rm -rf package/passwall-packages/smartdns && echo "Removed passwall-packages/smartdns"
@@ -157,7 +155,7 @@ case "$ADDITIONAL_PACKAGES" in
     remove_feed_duplicates package/passwall-packages
     ;;
   passwall2)
-    ADDITIONAL_CONFIG="configs/passwall2.config"
+    ADDITIONAL_CONFIGS+=(configs/passwall2.config)
     git clone --depth=1 "$PW2_REPO" package/passwall-luci
     git clone --depth=1 "$PWP_REPO" package/passwall-packages
     rm -rf package/passwall-packages/smartdns && echo "Removed passwall-packages/smartdns"
@@ -166,7 +164,7 @@ case "$ADDITIONAL_PACKAGES" in
     remove_feed_duplicates package/passwall-packages
     ;;
   all-sbwml)
-    ADDITIONAL_CONFIG="configs/all-sbwml.config"
+    ADDITIONAL_CONFIGS+=(configs/helloworld.config configs/passwall.config configs/passwall2.config)
     git clone --depth=1 "$SBWML_REPO" package/helloworld
     # 用 fw876/helloworld 的 mosdns 覆盖 sbwml 源里的同名包
     replace_from_repo "$SSRP_REPO" package/helloworld mosdns
@@ -179,16 +177,14 @@ case "$ADDITIONAL_PACKAGES" in
     ;;
 esac
 
-# Strip upx from every package Makefile (cloned repositories and feeds).
-remove_upx_calls
-
-# Append the matching config fragment to CONFIG_PATH (already resolved to an
-# absolute path above). The workflow later moves CONFIG_FILE to
-# ImmortalWrt/.config, so this runs while the repo root is still reachable.
-if [ -n "$ADDITIONAL_CONFIG" ]; then
-  CONFIG_FRAGMENT="$WORKSPACE/$ADDITIONAL_CONFIG"
+# Append the config fragments selected by the case branch above to CONFIG_PATH
+# (already resolved to an absolute path), keeping the order they were listed
+# in. The workflow later moves CONFIG_FILE to ImmortalWrt/.config, so this
+# runs while the repo root is still reachable.
+for cfg in "${ADDITIONAL_CONFIGS[@]}"; do
+  CONFIG_FRAGMENT="$WORKSPACE/$cfg"
   [ -f "$CONFIG_FRAGMENT" ] || { echo "错误：找不到配置文件 $CONFIG_FRAGMENT" >&2; exit 1; }
   echo >> "$CONFIG_PATH"
   echo "追加 $CONFIG_FRAGMENT 到 $CONFIG_PATH"
   cat "$CONFIG_FRAGMENT" >> "$CONFIG_PATH"
-fi
+done
