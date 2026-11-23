@@ -11,6 +11,15 @@
 #
 
 # ---------------------------------------------------------------------------
+# Upstream repositories (edit here to switch to a mirror or a fork)
+# ---------------------------------------------------------------------------
+SBWML_REPO="https://github.com/sbwml/openwrt_helloworld"
+SSRP_REPO="https://github.com/fw876/helloworld"
+PW1_REPO="https://github.com/Openwrt-Passwall/openwrt-passwall"
+PW2_REPO="https://github.com/Openwrt-Passwall/openwrt-passwall2"
+PWP_REPO="https://github.com/Openwrt-Passwall/openwrt-passwall-packages"
+
+# ---------------------------------------------------------------------------
 # Remove feed copies of packages provided by a locally cloned repo
 # ---------------------------------------------------------------------------
 remove_feed_duplicates() {
@@ -60,6 +69,41 @@ remove_upx_calls() {
   echo "已清理 $count 个 Makefile 中的 upx 命令"
 }
 
+# ---------------------------------------------------------------------------
+# Replace local packages with the copies from an upstream repository
+# ---------------------------------------------------------------------------
+# Usage: replace_from_repo <repo-url> <dest-dir> <pkg>...
+#   <repo-url> : git URL to clone (shallow, depth=1)
+#   <dest-dir> : directory that holds the local packages to overwrite
+#   <pkg>...   : package folder names to copy over from <repo-url>
+#
+# A package that does not exist upstream is skipped with a message instead of
+# failing, so the same call keeps working when upstream drops or renames one.
+# The clone goes to a temp dir that is always removed; set REPO_REF to clone a
+# specific branch/tag.
+replace_from_repo() {
+  local repo="$1" dest="$2" ref="${REPO_REF:-}"
+  local clone_dir pkg clone_args=(--depth=1)
+  shift 2
+
+  clone_dir=$(mktemp -d)
+  [ -n "$ref" ] && clone_args+=(-b "$ref")
+  git clone "${clone_args[@]}" "$repo" "$clone_dir"
+
+  for pkg in "$@"; do
+    if [ -d "$clone_dir/$pkg" ]; then
+      echo "Replace $pkg ,removed $dest/$pkg"
+      rm -rf "${dest:?}/$pkg"
+      cp -a "$clone_dir/$pkg" "$dest/"
+    else
+      echo "Skip $pkg（上游 $repo 中不存在）"
+    fi
+  done
+
+  rm -rf "$clone_dir"
+  echo "处理完成：$*"
+}
+
 # Replace Smartdns
 git clone --depth=1 -b PikuZheng https://github.com/Ljzkirito/smartdns-openwrt package/smartdns-custom
 remove_feed_duplicates package/smartdns-custom
@@ -91,74 +135,47 @@ ADDITIONAL_CONFIG=""
 # Actions-MT7981 repo root. Resolve it once to an absolute path so sed/cat and
 # the existence check below work regardless of the current directory.
 WORKSPACE="${GITHUB_WORKSPACE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
-[ -n "${CONFIG_FILE:-}" ] || { echo "错误：未设置 CONFIG_FILE" >&2; exit 1; }
-case "$CONFIG_FILE" in
-  /*) CONFIG_PATH="$CONFIG_FILE" ;;
-  *)  CONFIG_PATH="$WORKSPACE/$CONFIG_FILE" ;;
-esac
-[ -f "$CONFIG_PATH" ] || { echo "错误：找不到配置文件 $CONFIG_PATH" >&2; exit 1; }
+CONFIG_PATH="$WORKSPACE/$CONFIG_FILE"
+[ -f "$CONFIG_PATH" ] || { echo "错误：找不到配置文件 $CONFIG_PATH" >&2; exit 0; }
 
 case "$ADDITIONAL_PACKAGES" in
-  none)
-    sed -i "/CONFIG_PACKAGE_kmod-tun/d" "$CONFIG_PATH"
-    echo "Additional packages: none, removed kmod-tun in $CONFIG_PATH"
-    ;;
   helloworld)
     ADDITIONAL_CONFIG="configs/helloworld.config"
-    git clone --depth=1 -b dev https://github.com/fw876/helloworld package/helloworld
+    git clone --depth=1 -b dev "$SSRP_REPO" package/helloworld
 	# package/helloworld/shadowsocks-libev has a dependency on 'firewall4'
 	rm -rf package/helloworld/shadowsocks-libev && echo "removed package/helloworld/shadowsocks-libev"
-	# 要替换的包，按需增删这一行即可
-	replace=(v2ray-geodata kcptun shadowsocks-rust shadow-tls tuic-client naiveproxy)
-	sbwml_dir=$(mktemp -d)
-	git clone --depth=1 https://github.com/sbwml/openwrt_helloworld "$sbwml_dir"
-	# 源里有就替换，没有就跳过，不报错
-	for p in "${replace[@]}"; do
-	  if [ -d "$sbwml_dir/$p" ]; then
-		echo "Replace $p ,removed package/helloworld/$p"
-		rm -rf "package/helloworld/$p"
-		cp -a "$sbwml_dir/$p" package/helloworld/
-	  else
-		echo "Skip $p（sbwml 源中不存在）"
-	  fi
-	done
-	rm -rf "$sbwml_dir"
-	echo "处理完成：${replace[*]}"
+	replace_from_repo "$SBWML_REPO" package/helloworld v2ray-geodata kcptun shadowsocks-rust shadow-tls tuic-client naiveproxy
 	remove_feed_duplicates package/helloworld
     ;;
   passwall)
     ADDITIONAL_CONFIG="configs/passwall.config"
-    git clone --depth=1 https://github.com/Openwrt-Passwall/openwrt-passwall package/luci-passwall
-    git clone --depth=1 https://github.com/Openwrt-Passwall/openwrt-passwall-packages package/passwall-packages
+    git clone --depth=1 "$PW1_REPO" package/passwall-luci
+    git clone --depth=1 "$PWP_REPO" package/passwall-packages
     rm -rf package/passwall-packages/smartdns && echo "Removed passwall-packages/smartdns"
     rm -rf feeds/luci/applications/luci-app-passwall feeds/luci/applications/luci-app-passwall2
+    replace_from_repo "$SBWML_REPO" package/passwall-packages shadowsocks-rust shadow-tls
     remove_feed_duplicates package/passwall-packages
     ;;
   passwall2)
     ADDITIONAL_CONFIG="configs/passwall2.config"
-    git clone --depth=1 https://github.com/Openwrt-Passwall/openwrt-passwall2 package/luci-passwall2
-    git clone --depth=1 https://github.com/Openwrt-Passwall/openwrt-passwall-packages package/passwall-packages
+    git clone --depth=1 "$PW2_REPO" package/passwall-luci
+    git clone --depth=1 "$PWP_REPO" package/passwall-packages
     rm -rf package/passwall-packages/smartdns && echo "Removed passwall-packages/smartdns"
     rm -rf feeds/luci/applications/luci-app-passwall feeds/luci/applications/luci-app-passwall2
+    replace_from_repo "$SBWML_REPO" package/passwall-packages shadowsocks-rust shadow-tls
     remove_feed_duplicates package/passwall-packages
     ;;
   all-sbwml)
     ADDITIONAL_CONFIG="configs/all-sbwml.config"
-    git clone --depth=1 https://github.com/sbwml/openwrt_helloworld package/helloworld
-    mosdns_dir=$(mktemp -d)
-	git clone --depth=1 https://github.com/fw876/helloworld "$mosdns_dir"
-	if [ -d "$mosdns_dir/mosdns" ]; then
-	  rm -rf package/helloworld/mosdns && echo "removed package/helloworld/mosdns"
-	  cp -a "$mosdns_dir/mosdns" package/helloworld/
-	else
-	  echo "跳过 mosdns（fw876/helloworld 中不存在）"
-	fi
+    git clone --depth=1 "$SBWML_REPO" package/helloworld
+    # 用 fw876/helloworld 的 mosdns 覆盖 sbwml 源里的同名包
+    replace_from_repo "$SSRP_REPO" package/helloworld mosdns
     rm -rf package/helloworld/smartdns && echo "removed package/helloworld/smartdns"
-    rm -rf "$mosdns_dir"
     remove_feed_duplicates package/helloworld
     ;;
   *)
-    echo "警告：未知的 Additional packages 选项 '$ADDITIONAL_PACKAGES'，跳过" >&2
+    sed -i "/CONFIG_PACKAGE_kmod-tun/d" "$CONFIG_PATH"
+    echo "Additional packages: none, removed kmod-tun in $CONFIG_PATH"
     ;;
 esac
 
@@ -170,10 +187,7 @@ remove_upx_calls
 # ImmortalWrt/.config, so this runs while the repo root is still reachable.
 if [ -n "$ADDITIONAL_CONFIG" ]; then
   CONFIG_FRAGMENT="$WORKSPACE/$ADDITIONAL_CONFIG"
-  [ -f "$CONFIG_FRAGMENT" ] || {
-    echo "错误：找不到配置文件 $CONFIG_FRAGMENT" >&2
-    exit 1
-  }
+  [ -f "$CONFIG_FRAGMENT" ] || { echo "错误：找不到配置文件 $CONFIG_FRAGMENT" >&2; exit 1; }
   echo >> "$CONFIG_PATH"
   echo "追加 $CONFIG_FRAGMENT 到 $CONFIG_PATH"
   cat "$CONFIG_FRAGMENT" >> "$CONFIG_PATH"
