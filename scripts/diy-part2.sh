@@ -128,16 +128,17 @@ ADDITIONAL_PACKAGES="${ADDITIONAL_PACKAGES:-none}"
 ADDITIONAL_CONFIGS=()
 
 # This script runs with ImmortalWrt/ as the working directory (the workflow
-# cds there before calling it), but CONFIG_FILE is relative to the
-# Actions-MT7981 repo root. Resolve it once to an absolute path so sed/cat and
-# the existence check below work regardless of the current directory.
+# cds there before calling it), but CONFIG_FILE is a file name under configs/
+# in the Actions-MT7981 repo root. Resolve it once to an absolute path so
+# sed/cat and the existence check below work regardless of the current
+# directory.
 WORKSPACE="${GITHUB_WORKSPACE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
-CONFIG_PATH="$WORKSPACE/$CONFIG_FILE"
+CONFIG_PATH="$WORKSPACE/configs/$CONFIG_FILE"
 [ -f "$CONFIG_PATH" ] || { echo "错误：找不到配置文件 $CONFIG_PATH" >&2; exit 0; }
 
 case "$ADDITIONAL_PACKAGES" in
   helloworld)
-    ADDITIONAL_CONFIGS+=(configs/helloworld.config)
+    ADDITIONAL_CONFIGS+=(helloworld.config)
     git clone --depth=1 -b dev "$SSRP_REPO" package/helloworld
 	# package/helloworld/shadowsocks-libev has a dependency on 'firewall4'
 	rm -rf package/helloworld/shadowsocks-libev && echo "removed package/helloworld/shadowsocks-libev"
@@ -146,7 +147,7 @@ case "$ADDITIONAL_PACKAGES" in
 	remove_feed_duplicates package/helloworld
     ;;
   passwall)
-    ADDITIONAL_CONFIGS+=(configs/passwall.config)
+    ADDITIONAL_CONFIGS+=(passwall.config)
     git clone --depth=1 "$PW1_REPO" package/passwall-luci
     git clone --depth=1 "$PWP_REPO" package/passwall-packages
     rm -rf package/passwall-packages/smartdns && echo "Removed passwall-packages/smartdns"
@@ -155,7 +156,7 @@ case "$ADDITIONAL_PACKAGES" in
     remove_feed_duplicates package/passwall-packages
     ;;
   passwall2)
-    ADDITIONAL_CONFIGS+=(configs/passwall2.config)
+    ADDITIONAL_CONFIGS+=(passwall2.config)
     git clone --depth=1 "$PW2_REPO" package/passwall-luci
     git clone --depth=1 "$PWP_REPO" package/passwall-packages
     rm -rf package/passwall-packages/smartdns && echo "Removed passwall-packages/smartdns"
@@ -164,7 +165,7 @@ case "$ADDITIONAL_PACKAGES" in
     remove_feed_duplicates package/passwall-packages
     ;;
   all-sbwml)
-    ADDITIONAL_CONFIGS+=(configs/helloworld.config configs/passwall.config configs/passwall2.config)
+    ADDITIONAL_CONFIGS+=(helloworld.config passwall.config passwall2.config)
     git clone --depth=1 "$SBWML_REPO" package/helloworld
     # 用 fw876/helloworld 的 mosdns 覆盖 sbwml 源里的同名包
     replace_from_repo "$SSRP_REPO" package/helloworld mosdns
@@ -183,9 +184,9 @@ esac
 # in. The workflow later moves CONFIG_FILE to ImmortalWrt/.config, so this
 # runs while the repo root is still reachable.
 for cfg in "${ADDITIONAL_CONFIGS[@]}"; do
-  CONFIG_FRAGMENT="$WORKSPACE/$cfg"
+  CONFIG_FRAGMENT="$WORKSPACE/configs/$cfg"
   [ -f "$CONFIG_FRAGMENT" ] || { echo "错误：找不到配置文件 $CONFIG_FRAGMENT" >&2; exit 1; }
-  echo >> "$CONFIG_PATH"
+  printf '\n' >> "$CONFIG_PATH"
   echo "追加 $CONFIG_FRAGMENT 到 $CONFIG_PATH"
   cat "$CONFIG_FRAGMENT" >> "$CONFIG_PATH"
 done

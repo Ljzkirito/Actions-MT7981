@@ -5,7 +5,7 @@
 # Called by .github/workflows/Build_mt7981.yml (step "Configure firmware options").
 #
 # Required environment:
-#   CONFIG_FILE            build config path, relative to the Actions-MT7981 repo root
+#   CONFIG_FILE            build config file name under configs/ in the repo root
 #   LAN_IP                 LAN IPv4 address in CIDR form (RFC 1918 private only,
 #                          e.g. 192.168.6.1/24); the prefix sets the LAN netmask
 #                          in package/base-files/files/bin/config_generate
@@ -27,7 +27,7 @@
 #
 # Run it from the Actions-MT7981 repo root (GitHub Actions does). The script
 # changes into $GITHUB_WORKSPACE when set, otherwise it keeps the current
-# directory; CONFIG_FILE and ImmortalWrt/ are resolved relative to it.
+# directory; configs/CONFIG_FILE and ImmortalWrt/ are resolved relative to it.
 
 set -euo pipefail
 
@@ -36,7 +36,8 @@ set -euo pipefail
 cd "${GITHUB_WORKSPACE:-$(pwd)}"
 
 [ -n "${CONFIG_FILE:-}" ] || { echo "错误：未设置 CONFIG_FILE" >&2; exit 1; }
-[ -f "$CONFIG_FILE" ] || { echo "错误：找不到配置文件 $CONFIG_FILE" >&2; exit 1; }
+CONFIG_PATH="configs/$CONFIG_FILE"
+[ -f "$CONFIG_PATH" ] || { echo "错误：找不到配置文件 $CONFIG_PATH" >&2; exit 1; }
 
 # Remove stale entries for every option governed below, then append fresh ones
 for cfg in \
@@ -48,47 +49,45 @@ for cfg in \
   CONFIG_PACKAGE_luci-app-omcproxy \
   CONFIG_PACKAGE_mtkhqos_util \
   CONFIG_PACKAGE_luci-app-eqos-mtk; do
-  sed -i "/$cfg/d" "$CONFIG_FILE"
+  sed -i "/$cfg/d" "$CONFIG_PATH"
 done
 
 # Make sure appends start on a new line even if the file has no trailing newline
-if [ -n "$(tail -c 1 "$CONFIG_FILE")" ]; then
-  echo >> "$CONFIG_FILE"
-fi
+printf '\n' >> "$CONFIG_PATH"
 
 # CONFIG_MTK_MEMORY_SHRINK_AGGRESS
 if [ "${MEMORY_SHRINK_AGGRESS:-false}" = "true" ]; then
-  echo "CONFIG_MTK_MEMORY_SHRINK_AGGRESS=y" >> "$CONFIG_FILE"
+  echo "CONFIG_MTK_MEMORY_SHRINK_AGGRESS=y" >> "$CONFIG_PATH"
 else
-  echo "# CONFIG_MTK_MEMORY_SHRINK_AGGRESS is not set" >> "$CONFIG_FILE"
+  echo "# CONFIG_MTK_MEMORY_SHRINK_AGGRESS is not set" >> "$CONFIG_PATH"
 fi
 
 # zram-swap (kmod-zram is pulled in automatically as its dependency)
 if [ "${ZRAM_SWAP:-false}" = "true" ]; then
-  echo "CONFIG_PACKAGE_zram-swap=y" >> "$CONFIG_FILE"
+  echo "CONFIG_PACKAGE_zram-swap=y" >> "$CONFIG_PATH"
 else
-  echo "# CONFIG_PACKAGE_zram-swap is not set" >> "$CONFIG_FILE"
+  echo "# CONFIG_PACKAGE_zram-swap is not set" >> "$CONFIG_PATH"
 fi
 
 # IPTV (luci-app-msd_lite + luci-app-omcproxy)
 if [ "${IPTV_PACKAGES:-false}" = "true" ]; then
-  echo "CONFIG_PACKAGE_luci-app-msd_lite=y" >> "$CONFIG_FILE"
-  echo "CONFIG_PACKAGE_luci-app-omcproxy=y" >> "$CONFIG_FILE"
+  echo "CONFIG_PACKAGE_luci-app-msd_lite=y" >> "$CONFIG_PATH"
+  echo "CONFIG_PACKAGE_luci-app-omcproxy=y" >> "$CONFIG_PATH"
 else
-  echo "# CONFIG_PACKAGE_luci-app-msd_lite is not set" >> "$CONFIG_FILE"
-  echo "# CONFIG_PACKAGE_luci-app-omcproxy is not set" >> "$CONFIG_FILE"
+  echo "# CONFIG_PACKAGE_luci-app-msd_lite is not set" >> "$CONFIG_PATH"
+  echo "# CONFIG_PACKAGE_luci-app-omcproxy is not set" >> "$CONFIG_PATH"
 fi
 
 # MTK HQoS (luci-app-eqos-mtk + mtkhqos_util)
 if [ "${MTKHQOS:-false}" = "true" ]; then
-  echo "CONFIG_PACKAGE_luci-app-eqos-mtk=y" >> "$CONFIG_FILE"
-  echo "CONFIG_PACKAGE_mtkhqos_util=y" >> "$CONFIG_FILE"
+  echo "CONFIG_PACKAGE_luci-app-eqos-mtk=y" >> "$CONFIG_PATH"
+  echo "CONFIG_PACKAGE_mtkhqos_util=y" >> "$CONFIG_PATH"
 else
-  echo "# CONFIG_PACKAGE_luci-app-eqos-mtk is not set" >> "$CONFIG_FILE"
-  echo "# CONFIG_PACKAGE_mtkhqos_util is not set" >> "$CONFIG_FILE"
+  echo "# CONFIG_PACKAGE_luci-app-eqos-mtk is not set" >> "$CONFIG_PATH"
+  echo "# CONFIG_PACKAGE_mtkhqos_util is not set" >> "$CONFIG_PATH"
 fi
 
-grep -n -E "CONFIG_(MTK_MEMORY_SHRINK_AGGRESS|PACKAGE_kmod-zram|PACKAGE_zram-swap|PACKAGE_luci-app-msd_lite|PACKAGE_luci-app-omcproxy|PACKAGE_luci-app-eqos-mtk|PACKAGE_mtkhqos_util)" "$CONFIG_FILE" || true
+grep -n -E "CONFIG_(MTK_MEMORY_SHRINK_AGGRESS|PACKAGE_kmod-zram|PACKAGE_zram-swap|PACKAGE_luci-app-msd_lite|PACKAGE_luci-app-omcproxy|PACKAGE_luci-app-eqos-mtk|PACKAGE_mtkhqos_util)" "$CONFIG_PATH" || true
 
 # LAN IP: CIDR notation (RFC 1918 private address + prefix), e.g. 192.168.6.1/24.
 DEFAULT_LAN_IP="192.168.6.1/24"

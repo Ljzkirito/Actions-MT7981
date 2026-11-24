@@ -60,9 +60,9 @@ env:
   REPO_URL2: https://github.com/Yuzhii0718/immortalwrt-mt798x-hanwckf
   REPO_BRANCH: openwrt-21.02
   FEEDS_CONF: feeds.conf.default
-  DIY_P1_SH: scripts/diy-part1.sh
-  DIY_P2_SH: scripts/diy-part2.sh
-  CONFIGURE_SH: scripts/configure-firmware.sh
+  DIY_P1_SH: diy-part1.sh
+  DIY_P2_SH: diy-part2.sh
+  CONFIGURE_SH: configure-firmware.sh
   UPLOAD_BIN_DIR: false
   UPLOAD_RELEASE: true
   TZ: Asia/Shanghai
@@ -115,10 +115,10 @@ jobs:
         df -hT $PWD
         if [ "${{ github.event.inputs.REPO }}" = "hanwckf" ]; then
           REPO_URL="$REPO_URL1"
-          CONFIG_FILE="configs/mt7981-hanwckf.config"
+          CONFIG_FILE="mt7981-hanwckf.config"
         else
           REPO_URL="$REPO_URL2"
-          CONFIG_FILE="configs/mt7981-Yuzhii0718.config"
+          CONFIG_FILE="mt7981-Yuzhii0718.config"
         fi
         echo "REPO_URL=$REPO_URL" >> "$GITHUB_ENV"
         echo "CONFIG_FILE=$CONFIG_FILE" >> "$GITHUB_ENV"
@@ -161,9 +161,9 @@ jobs:
     - name: Load custom feeds (DIY_P1_SH)
       run: |
         [ -e $FEEDS_CONF ] && mv $FEEDS_CONF ImmortalWrt/feeds.conf.default
-        chmod +x $DIY_P1_SH
+        chmod +x $GITHUB_WORKSPACE/scripts/$DIY_P1_SH
         cd ImmortalWrt
-        $GITHUB_WORKSPACE/$DIY_P1_SH
+        $GITHUB_WORKSPACE/scripts/$DIY_P1_SH
 
     - name: Update feeds
       run: cd ImmortalWrt && ./scripts/feeds update -a
@@ -176,9 +176,9 @@ jobs:
         ADDITIONAL_PACKAGES: ${{ github.event.inputs.ADDITIONAL_PACKAGES }}
       run: |
         [ -e files ] && mv files ImmortalWrt/files
-        chmod +x $DIY_P2_SH
+        chmod +x $GITHUB_WORKSPACE/scripts/$DIY_P2_SH
         cd ImmortalWrt
-        $GITHUB_WORKSPACE/$DIY_P2_SH
+        $GITHUB_WORKSPACE/scripts/$DIY_P2_SH
 
     - name: Configure firmware options
       env:
@@ -188,14 +188,14 @@ jobs:
         IPTV_PACKAGES: ${{ github.event.inputs.IPTV_PACKAGES }}
         MTKHQOS: ${{ github.event.inputs.MTKHQOS }}
       run: |
-        chmod +x "$GITHUB_WORKSPACE/$CONFIGURE_SH"
-        "$GITHUB_WORKSPACE/$CONFIGURE_SH"
+        chmod +x "$GITHUB_WORKSPACE/scripts/$CONFIGURE_SH"
+        "$GITHUB_WORKSPACE/scripts/$CONFIGURE_SH"
 
     - name: Download package
       id: package
       timeout-minutes: 90
       run: |
-        [ -e $CONFIG_FILE ] && mv $CONFIG_FILE ImmortalWrt/.config
+        [ -e configs/$CONFIG_FILE ] && mv configs/$CONFIG_FILE ImmortalWrt/.config
         cd ImmortalWrt
         make defconfig
         make download -j8
@@ -267,10 +267,10 @@ jobs:
         - 源码分支: [$REPO_BRANCH]($REPO_URL/tree/$REPO_BRANCH)
         - 源码 Commit: [$SOURCE_COMMIT]($SOURCE_LINK)
         - 配置文件: $CONFIG_FILE
-        - Additional packages: ${{ github.event.inputs.ADDITIONAL_PACKAGES }}
         - 内核版本: $KERNEL_VERSION
         - 管理地址: ${{ github.event.inputs.LanIP }}
         - 编译缓存: ${{ github.event.inputs.Cache }}
+        - Additional packages: ${{ github.event.inputs.ADDITIONAL_PACKAGES }}
         - MEMORY_SHRINK_AGGRESS: ${{ github.event.inputs.MEMORY_SHRINK_AGGRESS }}
         - ZRAM_SWAP: ${{ github.event.inputs.ZRAM_SWAP }}
         - IPTV_PACKAGES: ${{ github.event.inputs.IPTV_PACKAGES }}
