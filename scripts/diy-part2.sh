@@ -152,7 +152,7 @@ case "$ADDITIONAL_PACKAGES" in
     git clone --depth=1 "$PWP_REPO" package/passwall-packages
     rm -rf package/passwall-packages/smartdns && echo "Removed passwall-packages/smartdns"
     rm -rf feeds/luci/applications/{luci-app-passwall,luci-app-passwall2}
-    replace_from_repo "$SBWML_REPO" package/passwall-packages shadowsocks-rust shadow-tls
+    replace_from_repo "$SBWML_REPO" package/passwall-packages shadowsocks-rust shadow-tls shadowsocksr-libev
     remove_feed_duplicates package/passwall-packages
     ;;
   passwall2)
@@ -161,7 +161,7 @@ case "$ADDITIONAL_PACKAGES" in
     git clone --depth=1 "$PWP_REPO" package/passwall-packages
     rm -rf package/passwall-packages/smartdns && echo "Removed passwall-packages/smartdns"
     rm -rf feeds/luci/applications/{luci-app-passwall,luci-app-passwall2}
-    replace_from_repo "$SBWML_REPO" package/passwall-packages shadowsocks-rust shadow-tls
+    replace_from_repo "$SBWML_REPO" package/passwall-packages shadowsocks-rust shadow-tls shadowsocksr-libev
     remove_feed_duplicates package/passwall-packages
     ;;
   all-sbwml)
