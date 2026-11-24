@@ -150,7 +150,7 @@ case "$ADDITIONAL_PACKAGES" in
     git clone --depth=1 "$PW1_REPO" package/passwall-luci
     git clone --depth=1 "$PWP_REPO" package/passwall-packages
     rm -rf package/passwall-packages/smartdns && echo "Removed passwall-packages/smartdns"
-    rm -rf feeds/luci/applications/luci-app-passwall feeds/luci/applications/luci-app-passwall2
+    rm -rf feeds/luci/applications/{luci-app-passwall,luci-app-passwall2}
     replace_from_repo "$SBWML_REPO" package/passwall-packages shadowsocks-rust shadow-tls
     remove_feed_duplicates package/passwall-packages
     ;;
@@ -159,7 +159,7 @@ case "$ADDITIONAL_PACKAGES" in
     git clone --depth=1 "$PW2_REPO" package/passwall-luci
     git clone --depth=1 "$PWP_REPO" package/passwall-packages
     rm -rf package/passwall-packages/smartdns && echo "Removed passwall-packages/smartdns"
-    rm -rf feeds/luci/applications/luci-app-passwall feeds/luci/applications/luci-app-passwall2
+    rm -rf feeds/luci/applications/{luci-app-passwall,luci-app-passwall2}
     replace_from_repo "$SBWML_REPO" package/passwall-packages shadowsocks-rust shadow-tls
     remove_feed_duplicates package/passwall-packages
     ;;
@@ -168,7 +168,7 @@ case "$ADDITIONAL_PACKAGES" in
     git clone --depth=1 "$SBWML_REPO" package/helloworld
     # 用 fw876/helloworld 的 mosdns 覆盖 sbwml 源里的同名包
     replace_from_repo "$SSRP_REPO" package/helloworld mosdns
-    rm -rf package/helloworld/smartdns && echo "removed package/helloworld/smartdns"
+    rm -rf package/helloworld/{smartdns,dae,luci-app-dae,daed,luci-app-daed,luci-app-homeproxy,momo,luci-app-momo,nikki,luci-app-nikki,shadowsocks-libev}
     remove_feed_duplicates package/helloworld
     ;;
   *)
