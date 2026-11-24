@@ -169,6 +169,7 @@ case "$ADDITIONAL_PACKAGES" in
     # 用 fw876/helloworld 的 mosdns 覆盖 sbwml 源里的同名包
     replace_from_repo "$SSRP_REPO" package/helloworld mosdns
     rm -rf package/helloworld/{smartdns,dae,luci-app-dae,daed,luci-app-daed,luci-app-homeproxy,momo,luci-app-momo,nikki,luci-app-nikki,shadowsocks-libev}
+    sed -i 's/libopenssl-legacy/libopenssl/g' package/helloworld/shadowsocksr-libev/Makefile
     remove_feed_duplicates package/helloworld
     ;;
   *)
