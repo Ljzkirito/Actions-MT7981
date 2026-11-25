@@ -98,6 +98,7 @@ jobs:
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
+        sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
         sudo bash "$GITHUB_WORKSPACE/scripts/init.sh"
         sudo -E apt -yqq install dos2unix
         sudo -E apt -yqq install libfuse-dev
