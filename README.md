@@ -15,6 +15,7 @@
 - **可配固件选项**：LAN IP/掩码、256M 内存压缩、zram-swap、IPTV（msd_lite + omcproxy）、MTK HQoS。
 - **默认基础包**：SmartDNS、Argon 主题、UPnP、WOL、定时重启等。
 - **构建加速**：可选 `cachewrtbuild` 缓存 toolchain。
+- **Rust 包免编译**：`shadowsocks-rust`、`shadow-tls`、`tuic-client` 等需要 Rust 交叉编译的包，构建时替换为 [sbwml/openwrt_helloworld](https://github.com/sbwml/openwrt_helloworld) 提供的预编译包，省去在 CI 上编译 Rust 的时间。
 - **自动发布**：Release 标签为时间戳，附带构建信息与 `build.config`；自动清理旧 Release 与旧 workflow 运行记录。
 
 ## 支持的设备
