@@ -153,6 +153,7 @@ case "$ADDITIONAL_PACKAGES" in
     rm -rf package/passwall-packages/smartdns && echo "Removed passwall-packages/smartdns"
     rm -rf feeds/luci/applications/{luci-app-passwall,luci-app-passwall2}
     replace_from_repo "$SBWML_REPO" package/passwall-packages shadowsocks-rust shadow-tls shadowsocksr-libev
+    sed -i 's/ +libopenssl-legacy//g' package/passwall-packages/shadowsocksr-libev/Makefile
     remove_feed_duplicates package/passwall-packages
     ;;
   passwall2)
@@ -162,6 +163,7 @@ case "$ADDITIONAL_PACKAGES" in
     rm -rf package/passwall-packages/smartdns && echo "Removed passwall-packages/smartdns"
     rm -rf feeds/luci/applications/{luci-app-passwall,luci-app-passwall2}
     replace_from_repo "$SBWML_REPO" package/passwall-packages shadowsocks-rust shadow-tls shadowsocksr-libev
+    sed -i 's/ +libopenssl-legacy//g' package/passwall-packages/shadowsocksr-libev/Makefile
     remove_feed_duplicates package/passwall-packages
     ;;
   all-sbwml)
@@ -170,7 +172,7 @@ case "$ADDITIONAL_PACKAGES" in
     # 用 fw876/helloworld 的 mosdns 覆盖 sbwml 源里的同名包
     replace_from_repo "$SSRP_REPO" package/helloworld mosdns
     rm -rf package/helloworld/{smartdns,dae,luci-app-dae,daed,luci-app-daed,luci-app-homeproxy,momo,luci-app-momo,nikki,luci-app-nikki,shadowsocks-libev}
-    sed -i 's/libopenssl-legacy/libopenssl/g' package/helloworld/shadowsocksr-libev/Makefile
+    sed -i 's/ +libopenssl-legacy//g' package/helloworld/shadowsocksr-libev/Makefile
     remove_feed_duplicates package/helloworld
     ;;
   *)
