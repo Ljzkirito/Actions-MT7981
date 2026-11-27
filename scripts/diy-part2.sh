@@ -109,14 +109,20 @@ remove_feed_duplicates package/smartdns-custom
 # Replace luci-theme-argon
 rm -rf feeds/luci/themes/luci-theme-argon && echo "removed feeds/luci/themes/luci-theme-argon"
 git clone https://github.com/jerrykuku/luci-theme-argon.git feeds/luci/themes/luci-theme-argon
-git -C feeds/luci/themes/luci-theme-argon checkout 1991a8e29ef6a086fb566517675edc85b1be629a
+# Remove luci-app-argon-config if exists
+if [ -d feeds/luci/applications/luci-app-argon-config ]; then
+  echo "Found luci-app-argon-config, removing ..."
+  rm -rfv feeds/luci/applications/luci-app-argon-config
+else
+  echo "luci-app-argon-config not found, skip"
+fi
 
 # Update golang latest version
-rm -rf feeds/packages/lang/golang && echo "removed feeds/packages/lang/golang"
+rm -rf feeds/packages/lang/golang && echo "Update golang latest version"
 git clone --depth=1 https://github.com/sbwml/packages_lang_golang feeds/packages/lang/golang
 
 # Update rust latest version
-rm -rf feeds/packages/lang/rust
+rm -rf feeds/packages/lang/rust && echo "Update rust latest version"
 git clone https://github.com/sbwml/packages_lang_rust feeds/packages/lang/rust
 
 # ---------------------------------------------------------------------------
@@ -141,11 +147,9 @@ case "$ADDITIONAL_PACKAGES" in
   helloworld)
     ADDITIONAL_CONFIGS+=(helloworld.config)
     git clone --depth=1 -b dev "$SSRP_REPO" package/helloworld
-	# package/helloworld/shadowsocks-libev has a dependency on 'firewall4'
-	rm -rf package/helloworld/shadowsocks-libev && echo "removed package/helloworld/shadowsocks-libev"
 	replace_from_repo "$SBWML_REPO" package/helloworld v2ray-geodata kcptun shadowsocks-rust shadow-tls tuic-client naiveproxy
 	remove_upx_calls package/helloworld/mihomo package/helloworld/xray-core
-	git clone --depth=1 -b openwrt-21.02 "MosDNS_REPO" package/mosdns
+	git clone --depth=1 -b v5 "MosDNS_REPO" package/mosdns
 	rm -rf package/helloworld/mosdns
 	remove_feed_duplicates package/mosdns
 	remove_feed_duplicates package/helloworld
@@ -156,8 +160,7 @@ case "$ADDITIONAL_PACKAGES" in
     git clone --depth=1 "$PWP_REPO" package/passwall-packages
     rm -rf package/passwall-packages/smartdns && echo "Removed passwall-packages/smartdns"
     rm -rf feeds/luci/applications/{luci-app-passwall,luci-app-passwall2}
-    replace_from_repo "$SBWML_REPO" package/passwall-packages shadowsocks-rust shadow-tls shadowsocksr-libev
-    sed -i 's/ +libopenssl-legacy//g' package/passwall-packages/shadowsocksr-libev/Makefile
+    replace_from_repo "$SBWML_REPO" package/passwall-packages shadowsocks-rust shadow-tls
     remove_feed_duplicates package/passwall-packages
     ;;
   passwall2)
@@ -166,17 +169,15 @@ case "$ADDITIONAL_PACKAGES" in
     git clone --depth=1 "$PWP_REPO" package/passwall-packages
     rm -rf package/passwall-packages/smartdns && echo "Removed passwall-packages/smartdns"
     rm -rf feeds/luci/applications/{luci-app-passwall,luci-app-passwall2}
-    replace_from_repo "$SBWML_REPO" package/passwall-packages shadowsocks-rust shadow-tls shadowsocksr-libev
-    sed -i 's/ +libopenssl-legacy//g' package/passwall-packages/shadowsocksr-libev/Makefile
+    replace_from_repo "$SBWML_REPO" package/passwall-packages shadowsocks-rust shadow-tls
     remove_feed_duplicates package/passwall-packages
     ;;
   all-sbwml)
     ADDITIONAL_CONFIGS+=(helloworld.config passwall.config passwall2.config)
     git clone --depth=1 "$SBWML_REPO" package/helloworld
-    git clone --depth=1 -b openwrt-21.02 "MosDNS_REPO" package/mosdns
+    git clone --depth=1 -b v5 "MosDNS_REPO" package/mosdns
     remove_feed_duplicates package/mosdns
-    rm -rf package/helloworld/{smartdns,dae,luci-app-dae,daed,luci-app-daed,luci-app-homeproxy,momo,luci-app-momo,nikki,luci-app-nikki,shadowsocks-libev}
-    sed -i 's/ +libopenssl-legacy//g' package/helloworld/shadowsocksr-libev/Makefile
+    rm -rf package/helloworld/smartdns && echo "Removed package/helloworld/smartdns"
     remove_feed_duplicates package/helloworld
     ;;
   *)
