@@ -18,6 +18,7 @@ SSRP_REPO="https://github.com/fw876/helloworld"
 PW1_REPO="https://github.com/Openwrt-Passwall/openwrt-passwall"
 PW2_REPO="https://github.com/Openwrt-Passwall/openwrt-passwall2"
 PWP_REPO="https://github.com/Openwrt-Passwall/openwrt-passwall-packages"
+MosDNS_REPO="https://github.com/sbwml/luci-app-mosdns"
 
 # ---------------------------------------------------------------------------
 # Remove feed copies of packages provided by a locally cloned repo
@@ -144,6 +145,9 @@ case "$ADDITIONAL_PACKAGES" in
 	rm -rf package/helloworld/shadowsocks-libev && echo "removed package/helloworld/shadowsocks-libev"
 	replace_from_repo "$SBWML_REPO" package/helloworld v2ray-geodata kcptun shadowsocks-rust shadow-tls tuic-client naiveproxy
 	remove_upx_calls package/helloworld/mihomo package/helloworld/xray-core
+	git clone --depth=1 -b openwrt-21.02 "MosDNS_REPO" package/mosdns
+	rm -rf package/helloworld/mosdns
+	remove_feed_duplicates package/mosdns
 	remove_feed_duplicates package/helloworld
     ;;
   passwall)
@@ -169,8 +173,8 @@ case "$ADDITIONAL_PACKAGES" in
   all-sbwml)
     ADDITIONAL_CONFIGS+=(helloworld.config passwall.config passwall2.config)
     git clone --depth=1 "$SBWML_REPO" package/helloworld
-    # 用 fw876/helloworld 的 mosdns 覆盖 sbwml 源里的同名包
-    replace_from_repo "$SSRP_REPO" package/helloworld mosdns
+    git clone --depth=1 -b openwrt-21.02 "MosDNS_REPO" package/mosdns
+    remove_feed_duplicates package/mosdns
     rm -rf package/helloworld/{smartdns,dae,luci-app-dae,daed,luci-app-daed,luci-app-homeproxy,momo,luci-app-momo,nikki,luci-app-nikki,shadowsocks-libev}
     sed -i 's/ +libopenssl-legacy//g' package/helloworld/shadowsocksr-libev/Makefile
     remove_feed_duplicates package/helloworld
