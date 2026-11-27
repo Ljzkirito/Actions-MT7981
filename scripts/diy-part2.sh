@@ -177,7 +177,8 @@ case "$ADDITIONAL_PACKAGES" in
     ;;
   *)
     sed -i "/CONFIG_PACKAGE_kmod-tun/d" "$CONFIG_PATH"
-    echo "Additional packages: none, removed kmod-tun in $CONFIG_PATH"
+    sed -i "/CONFIG_PACKAGE_kmod-warp/d" "$CONFIG_PATH"
+    echo "Additional packages: none, removed kmod-tun and kmod-warp in $CONFIG_PATH"
     ;;
 esac
 

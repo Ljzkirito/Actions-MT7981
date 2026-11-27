@@ -41,7 +41,6 @@ CONFIG_PATH="configs/$CONFIG_FILE"
 
 # Remove stale entries for every option governed below, then append fresh ones
 for cfg in \
-  CONFIG_PACKAGE_kmod-warp \
   CONFIG_MTK_MEMORY_SHRINK_AGGRESS \
   CONFIG_PACKAGE_kmod-zram \
   CONFIG_PACKAGE_zram-swap \
