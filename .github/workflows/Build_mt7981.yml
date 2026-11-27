@@ -17,7 +17,7 @@ on:
         description: 'Source repository'
         default: Yuzhii0718
         options:
-          - hanwckf
+          - padavanonly
           - Yuzhii0718
         type: choice
       ADDITIONAL_PACKAGES:
@@ -56,9 +56,9 @@ on:
         type: boolean
 
 env:
-  REPO_URL1: https://github.com/hanwckf/immortalwrt-mt798x
-  REPO_URL2: https://github.com/Yuzhii0718/immortalwrt-mt798x-hanwckf
-  REPO_BRANCH: openwrt-21.02
+  REPO_URL1: https://github.com/padavanonly/immortalwrt-mt798x-6.6
+  REPO_URL2: https://github.com/Yuzhii0718/immortalwrt-mt798x-6.6-padavanonly
+  REPO_BRANCH: openwrt-24.10-6.6
   FEEDS_CONF: feeds.conf.default
   DIY_P1_SH: diy-part1.sh
   DIY_P2_SH: diy-part2.sh
@@ -114,9 +114,9 @@ jobs:
       working-directory: /workdir
       run: |
         df -hT $PWD
-        if [ "${{ github.event.inputs.REPO }}" = "hanwckf" ]; then
+        if [ "${{ github.event.inputs.REPO }}" = "padavanonly" ]; then
           REPO_URL="$REPO_URL1"
-          CONFIG_FILE="mt7981-hanwckf.config"
+          CONFIG_FILE="mt7981-padavanonly.config"
         else
           REPO_URL="$REPO_URL2"
           CONFIG_FILE="mt7981-Yuzhii0718.config"
@@ -247,8 +247,9 @@ jobs:
       run: |
         echo "release_tag=$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_OUTPUT
 
-        # Kernel version from the cloned source tree: include/kernel-5.4 -> LINUX_KERNEL_HASH-5.4.xxx = <hash>
-        KERNEL_VERSION=$(sed -n 's/^LINUX_KERNEL_HASH-\([0-9][0-9.]*\)[[:space:]]*=.*/\1/p' ImmortalWrt/include/kernel-5.4 2>/dev/null | head -n1)
+        # Kernel version from the cloned source tree: include/kernel-* -> LINUX_KERNEL_HASH-<version> = <hash>
+        KERNEL_FILE=$(ls -1 ImmortalWrt/include/kernel-* 2>/dev/null | sort -V | tail -n1)
+        KERNEL_VERSION=$(sed -n 's/^LINUX_KERNEL_HASH-\([0-9][0-9.]*\)[[:space:]]*=.*/\1/p' "$KERNEL_FILE" 2>/dev/null | head -n1)
         KERNEL_VERSION="${KERNEL_VERSION:-unknown}"
 
         # Source commit of the cloned tree (the exact code being built); fall back to the branch link

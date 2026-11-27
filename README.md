@@ -4,13 +4,13 @@
 
 使用 GitHub Actions 云编译 **ImmortalWrt**（MediaTek MT7981 / Filogic 820）固件。一次构建同时产出 **360 T7** 与 **小米 WR30U** 两台设备的固件，并自动发布到 Releases。
 
-- 源码：[hanwckf/immortalwrt-mt798x](https://github.com/hanwckf/immortalwrt-mt798x)、[Yuzhii0718/immortalwrt-mt798x-hanwckf](https://github.com/Yuzhii0718/immortalwrt-mt798x-hanwckf)，分支 `openwrt-21.02`。
-- 基于 MTK SDK（Linux 5.4 内核、MTK Wi-Fi 驱动 7673），**不是** OpenWrt 主线，请勿与官方 23.05/24.10 固件混用。
+- 源码：[padavanonly/immortalwrt-mt798x-6.6](https://github.com/padavanonly/immortalwrt-mt798x-6.6)、[Yuzhii0718/immortalwrt-mt798x-6.6-padavanonly](https://github.com/Yuzhii0718/immortalwrt-mt798x-6.6-padavanonly)，分支 `openwrt-24.10-6.6`。
+- 基于 ImmortalWrt 24.10 + MTK SDK（Linux 6.6 内核、MTK 闭源 Wi-Fi 驱动），**不是** OpenWrt 主线，请勿与官方 ImmortalWrt/OpenWrt 固件混用。
 - 工作流派生自 [P3TERX/Actions-OpenWrt](https://github.com/P3TERX/Actions-OpenWrt)。
 
 ## 固件特性
 
-- **双源码可选**：`hanwckf` 原版或 `Yuzhii0718` 分支。
+- **双源码可选**：`padavanonly` 原版或 `Yuzhii0718` 分支（分支均为 `openwrt-24.10-6.6`）。
 - **双设备单次构建**：同时生成 360 T7 与 WR30U 的 sysupgrade 固件。
 - **可配固件选项**：LAN IP/掩码、256M 内存压缩、zram-swap、IPTV（msd_lite + omcproxy）、MTK HQoS。
 - **默认基础包**：SmartDNS、Argon 主题、UPnP、WOL、定时重启等。
@@ -42,7 +42,7 @@
 
 | 参数 | 默认值 | 说明 |
 | --- | --- | --- |
-| `REPO` | `Yuzhii0718` | 源码仓库：`hanwckf` 或 `Yuzhii0718` |
+| `REPO` | `Yuzhii0718` | 源码仓库：`padavanonly` 或 `Yuzhii0718` |
 | `ADDITIONAL_PACKAGES` | `none` | `none` / `helloworld` / `passwall` / `passwall2` / `all-sbwml` |
 | `LanIP` | `192.168.6.1/24` | LAN 地址（CIDR）。仅接受 RFC 1918 私有地址，前缀需在 `/8`、`/12`、`/16`（按网段）到 `/30` 之间，且不能是网络/广播地址；非法输入会告警并回退默认值 |
 | `MEMORY_SHRINK_AGGRESS` | `true` | `CONFIG_MTK_MEMORY_SHRINK_AGGRESS`，256M 内存设备建议开启 |
@@ -57,7 +57,7 @@
 | --- | --- | --- |
 | Check Server Performance | 打印 CPU/内存/磁盘信息 | - |
 | Initialization environment | `scripts/init.sh` 安装依赖：GCC 13、LLVM 23、Go 1.27、Node 24、UPX 5.3.0、`po2lmo`、`padjffs2` 等；仅支持 Ubuntu 24.04 (noble) | 30 min |
-| Clone source code | `git clone -b openwrt-21.02 --depth=1` 到 `/workdir/ImmortalWrt` 并软链 | - |
+| Clone source code | `git clone -b openwrt-24.10-6.6 --depth=1` 到 `/workdir/ImmortalWrt` 并软链 | - |
 | Apply patches | 按文件名顺序对 `patch/<REPO>/*.patch` 执行 `patch -p1 --batch --forward` | - |
 | Cache Toolchain | 仅 `Cache=true` 时执行 | - |
 | Load custom feeds (DIY_P1) | `scripts/diy-part1.sh`：用 `odhcp6c` + `odhcpd-ipv6only` 替换 `ipv6helper`，并关闭 LAN DHCPv6（仅保留 RA/SLAAC） | - |
@@ -79,7 +79,7 @@
 - **Release**
   - 标签：`YYYY.MM.DD-HHMM`。
   - 资产：`immortalwrt*.bin`、`build.config`（本次构建使用的完整配置，便于复现）。
-  - 说明：包含内核版本（从 `include/kernel-5.4` 解析）、源码 commit 链接、各输入参数与 BL2/U-Boot 搭配建议。
+  - 说明：包含内核版本（从 `include/kernel-6.6` 解析）、源码 commit 链接、各输入参数与 BL2/U-Boot 搭配建议。
 
 ## 仓库结构
 
@@ -89,13 +89,13 @@
 ├── .gitattributes                      # 统一 LF 行尾
 ├── configs/
 │   ├── mt7981-Yuzhii0718.config        # Yuzhii0718 源码的构建配置
-│   ├── mt7981-hanwckf.config           # hanwckf 源码的构建配置
+│   ├── mt7981-padavanonly.config       # padavanonly 源码的构建配置
 │   ├── helloworld.config               
 │   ├── passwall.config                 
 │   └── passwall2.config                
 ├── patch/
 │   ├── Yuzhii0718/*.patch              # 选择 Yuzhii0718 时按序应用
-│   ├── hanwckf/*.patch                 # 选择 hanwckf 时按序应用
+│   ├── padavanonly/*.patch             # 选择 padavanonly 时按序应用
 │   └── delete/*.patch                  # 已撤下的补丁，仅存档，不参与构建
 ├── scripts/
 │   ├── init.sh                         # 构建依赖安装（Ubuntu 24.04、root）
@@ -116,12 +116,12 @@
 | `Yuzhii0718` | `001` | iwinfo mtk：修复 UCI 字符串 use-after-free |
 | | `002` | iwinfo mtk：修复扫描缓冲区长度与 SSID 越界 |
 | | `003` | mt_wifi：Supported Channels IE 过大时不再拒绝关联 |
-| `hanwckf` | `001` | autocore：增加读取交换机端口状态的权限 |
+| `padavanonly` | `001` | autocore：增加读取交换机端口状态的权限 |
 | | `002` | autocore：修复 issue #353，GSW 交换机改用 `swconfig` 读取每端口流量 |
 | | `003` | mt_wifi rrm：修复 SSID 格式化越界（`snprintf`） |
 | | `004` | 将 360 T7 设备名改为 Qihoo |
 | `delete` | `000` | PPP 拆除时轮询等待 `wan_6` 消失（已撤下） |
-| | `003` | 修复 RRM `snprintf` 读越界（已撤下，由 `hanwckf/003` 取代） |
+| | `003` | 修复 RRM `snprintf` 读越界（已撤下，由 `padavanonly/003` 取代） |
 
 ## 自定义指南
 
@@ -130,8 +130,8 @@
 直接编辑 `configs/mt7981-<REPO>.config`，或在本地 `make menuconfig` 后执行 `./scripts/diffconfig.sh > seed.config`，将差异合并进去。
 
 ```bash
-git clone -b openwrt-21.02 --depth=1 https://github.com/Yuzhii0718/immortalwrt-mt798x-hanwckf.git
-cd immortalwrt-mt798x-hanwckf
+git clone -b openwrt-24.10-6.6 --depth=1 https://github.com/Yuzhii0718/immortalwrt-mt798x-6.6-padavanonly.git
+cd immortalwrt-mt798x-6.6-padavanonly
 ./scripts/feeds update -a && ./scripts/feeds install -a
 cp defconfig/mt7981-ax3000.config .config
 make menuconfig && make defconfig
@@ -169,14 +169,14 @@ make menuconfig && make defconfig
 1. **仅手动触发**：工作流没有 `push`/`schedule` 触发器。
 2. **构建时长**：全量编译通常 1.5–2.5 小时，插件越多越慢；编译步骤上限 180 分钟。
 3. **首次登录**：默认 LAN 为 `192.168.6.1`，root 密码为空，请首次登录后立即设置。
-4. **固件不通用**：MTK SDK 5.4 内核 + 闭源 Wi-Fi 驱动，仅适配上述两台设备及对应 U-Boot/分区布局。
+4. **固件不通用**：ImmortalWrt 24.10 + Linux 6.6 内核 + 闭源 Wi-Fi 驱动，仅适配上述两台设备及对应 U-Boot/分区布局。
 5. **上游漂移**：feeds、插件仓库或分支变更可能导致构建失败，需同步更新 `diy-part2.sh` 中的地址/提交。
 6. **Release 清理**：仅保留最近 10 个 Release；更早的固件请自行备份。
 
 ## 参考与致谢
 
 - [P3TERX/Actions-OpenWrt](https://github.com/P3TERX/Actions-OpenWrt) 与[中文教程](https://p3terx.com/archives/build-openwrt-with-github-actions.html)
-- [hanwckf/immortalwrt-mt798x](https://github.com/hanwckf/immortalwrt-mt798x)、[Yuzhii0718/immortalwrt-mt798x-hanwckf](https://github.com/Yuzhii0718/immortalwrt-mt798x-hanwckf)
+- [padavanonly/immortalwrt-mt798x-6.6](https://github.com/padavanonly/immortalwrt-mt798x-6.6)、[Yuzhii0718/immortalwrt-mt798x-6.6-padavanonly](https://github.com/Yuzhii0718/immortalwrt-mt798x-6.6-padavanonly)
 - [sbwml/openwrt_helloworld](https://github.com/sbwml/openwrt_helloworld)、[fw876/helloworld](https://github.com/fw876/helloworld)
 - [Openwrt-Passwall](https://github.com/Openwrt-Passwall)、[jerrykuku/luci-theme-argon](https://github.com/jerrykuku/luci-theme-argon)
 - [Ljzkirito/smartdns-openwrt](https://github.com/Ljzkirito/smartdns-openwrt)（`PikuZheng` 分支）
