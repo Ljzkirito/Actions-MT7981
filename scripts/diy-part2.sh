@@ -116,8 +116,7 @@ rm -rf feeds/packages/lang/golang && echo "removed feeds/packages/lang/golang"
 git clone --depth=1 https://github.com/sbwml/packages_lang_golang feeds/packages/lang/golang
 
 # Update rust latest version
-rm -rf feeds/packages/lang/rust
-git clone https://github.com/sbwml/packages_lang_rust feeds/packages/lang/rust
+git clone https://github.com/sbwml/packages_lang_rust package/lang/rust
 
 # ---------------------------------------------------------------------------
 # Additional packages (workflow input ADDITIONAL_PACKAGES)
