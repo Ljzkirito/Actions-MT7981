@@ -103,7 +103,7 @@ replace_from_repo() {
 }
 
 # Replace Smartdns
-git clone --depth=1 -b PikuZheng https://github.com/Ljzkirito/smartdns-openwrt package/smartdns-custom
+git clone --depth=1 -b openwrt-21.02 https://github.com/Ljzkirito/smartdns-openwrt package/smartdns-custom
 remove_feed_duplicates package/smartdns-custom
 
 # Replace luci-theme-argon
@@ -112,9 +112,7 @@ git clone https://github.com/jerrykuku/luci-theme-argon.git feeds/luci/themes/lu
 # Remove luci-app-argon-config if exists
 if [ -d feeds/luci/applications/luci-app-argon-config ]; then
   echo "Found luci-app-argon-config, removing ..."
-  rm -rfv feeds/luci/applications/luci-app-argon-config
-else
-  echo "luci-app-argon-config not found, skip"
+  rm -rf feeds/luci/applications/luci-app-argon-config
 fi
 
 # Update golang latest version
