@@ -103,7 +103,7 @@ replace_from_repo() {
 }
 
 # Replace Smartdns
-git clone --depth=1 -b PikuZheng https://github.com/Ljzkirito/smartdns-openwrt package/smartdns-custom
+git clone --depth=1 -b openwrt-21.02 https://github.com/Ljzkirito/smartdns-openwrt package/smartdns-custom
 remove_feed_duplicates package/smartdns-custom
 
 # Replace luci-theme-argon
